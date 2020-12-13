@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <title>Daily</title>
+    </head>
+    <body>
+        <div id="app" class="container">
+            <div class="cryptos row align-items-center">
+                <div class="col-sm text-center">
+                    <h1 class="display-5">ETH</h1>
+                    <h3 class="display-5"><small class="text-secondary">USD</small> <span id="ETH-USD"></span></h3>
+                    <h3 class="display-5"><small class="text-secondary">EUR</small> <span id="ETH-EUR"></span></h3>
+                </div>
+                <div class="col-sm text-center">
+                    <h1 class="display-5">BTC</h1>
+                    <h3 class="display-5"><small class="text-secondary">USD</small> <span id="BTC-USD"></span></h3>
+                    <h3 class="display-5"><small class="text-secondary">EUR</small> <span id="BTC-EUR"></span></h3>
+                </div>
+            </div>
+            <div class="covid row align-items-center">
+                <iframe src="https://onemocneni-aktualne.mzcr.cz/covid-19/kraje/PHA/widget" width="370" height="795"></iframe>
+                <iframe src="https://onemocneni-aktualne.mzcr.cz/covid-19/widget" width="370" height="795"></iframe>
+            </div>
+        </div>
+        <script type="text/javascript">
+            this.websocket = new WebSocket('wss://ws-feed.gdax.com');
+
+            this.websocket.onopen = () => {
+                this.websocket.send(JSON.stringify({
+                    "type": "subscribe",
+                    "channels": [
+                        {
+                            "name": "ticker",
+                            "product_ids": [
+                                "ETH-USD",
+                                "ETH-EUR",
+                                "BTC-USD",
+                                "BTC-EUR",
+                            ]
+                        }
+                    ]
+                }));
+            };
+
+            let cachedTargets = {};
+
+            let updateTarget = (id, price) => {
+                if (! id) {
+                    return;
+                }
+                if (! cachedTargets[id]) {
+                    let target = document.getElementById(id);
+                    if (target) {
+                        cachedTargets[id] = target;
+                    }
+                }
+                if (cachedTargets[id]) {
+                    cachedTargets[id].innerHTML = parseFloat(price).toFixed(2);
+                }
+            };
+
+            this.websocket.onmessage = message => {
+                this.loaded = true;
+                let parsed = JSON.parse(message.data);
+                updateTarget(parsed.product_id, parsed.price);
+            };
+            this.websocket.onerror = err => {
+                console.log('error', err);
+            };
+            this.websocket.onclose = () => {
+                console.log('closed');
+            };
+        </script>
+    </body>
+</html>
